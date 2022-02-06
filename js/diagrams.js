@@ -13,13 +13,13 @@
 		const drawChart = () => {
             let datasets = [ 
                 {data: cntPlants.map(x => x/100), label: 'Количество', borderColor : '#000000' }, 
-                {data: greenPlants, label: 'Средний цвет', borderColor : '#00aa00' }, 
-                {data: redPlants, label: 'Средний цвет', borderColor : '#aa0000' },
-                {data: distancePlants, label: 'Средняя дистанция', borderColor : ['#0000aa'] },
-                {data: childrenPlants, label: 'Среднее количество потомков', borderColor : ['#00aaaa'] }, 
+                {data: greenPlants, label: 'Цвет', borderColor : '#00aa00' }, 
+                {data: redPlants, label: 'Цвет', borderColor : '#aa0000' },
+                {data: distancePlants, label: 'Дистанция размножения', borderColor : ['#0000aa'] },
+                {data: childrenPlants, label: 'Количество потомков', borderColor : ['#00aaaa'] }, 
                 {data: fertilityPlants, label: 'Шанс размножения', borderColor : ['#00aa00'] }, 
-                {data: energyPlants, label: 'Среднее количество энергии', borderColor : ['#00aaaa'] },
-                {data: energyPlantsMax, label: 'Среднее количество максимума энергии', borderColor : ['#aaaa00'] },
+                {data: energyPlants, label: 'Энергия', borderColor : ['#00aaaa'] },
+                {data: energyPlantsMax, label: 'Лимит энергии', borderColor : ['#aaaa00'] },
                 {data: agePlants, label: 'Средний возраст', borderColor : ['#00ffff'] }
             ]
 			let labels = Array.from({ length: greenPlants.length }, (v, k) => k)
@@ -27,21 +27,19 @@
 			if (datasets[0]) { fillChart('allChart', labels, datasets, 'allChart') }
 
 			datasets = [{data: cntPlants, label: 'Всего', borderColor : '#000000' }, 
-            {data: locationSearchPlants, label: 'С поиском места', borderColor : '#0000ff' }, ]
+            {data: locationSearchPlants, label: 'С поиском места', borderColor : '#0000ff' }, 
+            {data: parasites, label: 'Паразиты', borderColor : '#ff00ff' }, ]
 
 			if (datasets[0]) { fillChart('cntChart', labels, datasets, 'cntChart') }
 
-			datasets = [{
-				data: greenPlants,
-				label: 'Средний цвет',
-				borderColor : '#00aa00' }, {
-				data: redPlants,
-				label: 'Средний цвет',
-				borderColor : '#aa0000' }]
+			datasets = [{data: greenPlants, label: 'Средний цвет', borderColor : '#00aa00' }, 
+            {data: redPlants, label: 'Средний цвет', borderColor : '#aa0000' }, 
+            {data: attackPlants, label: 'Атака', borderColor : '#ff00ff' }, 
+            {data: protectionPlants, label: 'Защита', borderColor : '#0000ff' },]
 
 			if (datasets[0]) { fillChart('greenChart', labels, datasets, 'greenChart', ) }
 
-			datasets = [{data: childrenPlants, label: 'Среднее количество потомков', borderColor : ['#00aaaa'] }, 
+			datasets = [{data: childrenPlants, label: 'Количество потомков', borderColor : ['#00aaaa'] }, 
                 {data: fertilityPlants, label: 'Шанс размножения', borderColor : ['#00aa00'] }, 
                 {data: soilEfficiencyPlants, label: 'Эффективность использования почвы', borderColor : ['#aaaa00'] }, 
                 {data: distancePlants, label: 'Средняя дистанция', borderColor : ['#0000aa'] },
@@ -77,7 +75,7 @@
 		}
 		
 
-const fillChart = (chart, labels, datasets, name, typeChart = 'line') => {
+const fillChart = async (chart, labels, datasets, name, typeChart = 'line') => {
     if (charts[chart] === null)
         charts[chart] = DiagramArray(labels, datasets, name, typeChart);
     else{

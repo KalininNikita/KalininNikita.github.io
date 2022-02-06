@@ -9,7 +9,7 @@
 	<script type="text/javascript" src="js/map.js"></script>
 	<script type="text/javascript" src="js/reproduction.js"></script>
 </head>
-
+ 
 <body>
 	<style>
 		.main{
@@ -37,20 +37,32 @@
 			<div><input type="submit" value="Стопэ" onclick="stop();" /></div>
 			<div>
 				<div>
-				<input type="radio" id="type0" name="radio" value="type0" checked onchange="drawing()"/>
+				<input type="radio" id="type0" name="radio" checked onchange="drawing()"/>
 				<label for="type0">Растения</label>
 				</div>
 				<div>
-				<input type="radio" id="type1" name="radio" value="type1"  onchange="drawing()"/>
+				<input type="radio" id="type1" name="radio" onchange="drawing()"/>
 				<label for="type1">Водичка</label>
 				</div>
 				<div>
-				<input type="radio" id="type2" name="radio" value="type2" onchange="drawing()" />
+				<input type="radio" id="type2" name="radio" onchange="drawing()" />
 				<label for="type2">Минеральные вещества</label>
 				</div>
 				<div>
-				<input type="radio" id="type3" name="radio" value="type3" onchange="drawing()" />
+				<input type="radio" id="type3" name="radio" onchange="drawing()" />
 				<label for="type3">Возрасты</label>
+				</div>
+				<div>
+				<input type="radio" id="type4" name="radio" onchange="drawing()" />
+				<label for="type4">Энергия</label>
+				</div>
+				<div>
+				<input type="radio" id="type5" name="radio"  onchange="drawing()" />
+				<label for="type5">Атака/защита</label>
+				</div>
+				<div>
+				<input type="radio" id="type6" name="radio"  onchange="drawing()" />
+				<label for="type6">Извлечение минералов</label>
 				</div>
 			</div>
 			<div id = "data">
@@ -84,6 +96,7 @@
 			n = nValue;
 			m = n;
 			cell = size / n; 
+			cntRiver = n / 10;
 
 			create();
 		}
@@ -101,14 +114,17 @@
 
 		let cell = size / n; 
 
+		let cntRiver = n / 10;
+
 		const reproductionLimit = 128;
 		const reproductionEnergy = 32;
-		const locationSearchEnergy = 16;
+		const locationSearchEnergy = 8;
 		const mutationProbability = 1/50
 		const energySoil = 9;
 		const energyCost = 20;
 		const maxGreen = 255;
-		const fertilizer = 10;
+		const fertilizer = 7;
+		const energyBegin = 200;
 
 		let sunPhase = 1;
 		let dSun = -0.1;
@@ -119,8 +135,11 @@
 		let arr = [];
 
 		let cntPlants = []
+		let parasites = []
 		let greenPlants = []
 		let redPlants = []
+		let attackPlants = []
+		let protectionPlants = []
 		let distancePlants = []
 		let distanceSearchPlants = []
 		let childrenPlants = []
@@ -134,8 +153,8 @@
 		let year = 0;
 		let newInterval = null;
 
-		const run = () => newInterval = setInterval(nextStep, 500)
-		const stop = () => clearInterval(newInterval)
+		const run = () => newInterval = newInterval == null ? setInterval(nextStep, 500) : newInterval
+		const stop = () => {clearInterval(newInterval); newInterval = null}
 
 		const getSoilEnergy = (cell, plant) => {
 			let energy = Math.min(energySoil * plant.soilEfficiency, energySoil * cell.soilFertility)
@@ -143,7 +162,7 @@
 			return energy
 		}
 
-		const nextStep = (drawing = true) => {
+		const nextStep = async (drawing = true) => {
 			for (let i = 0; i < n * m; i++){
 				if (arr[i].plant) {
 					let plant = arr[i].plant
@@ -158,12 +177,15 @@
 								sunPhase * Math.pow(plant.green, 2) / Math.pow(maxGreen, 1)
 								+ soilEnergy
 								- Math.pow(plant.red, 1) / 4
-								- Math.pow(age, 2/3) 
-								- Math.pow(plant.distance, 2) 
-								- Math.pow(dWater, 2)
+								- Math.pow(age, 4/5) 
+								- Math.pow(plant.distance, 3/2) 
+								- Math.pow(dWater, 5/2)
 								- Math.pow(plant.energyMax, 6/14) 
 								- Math.pow(plant.fertility, 2)
 								- Math.pow(plant.soilEfficiency, 2) / 3
+								- Math.pow(plant.protection, 3/4)
+								- Math.pow(plant.parasitism * plant.attack, 1/4)
+								- 10 * plant.parasitism
 								- energyCost)
 
 							if (plant.energy > plant.energyMax) plant.energy = plant.energyMax
@@ -174,7 +196,7 @@
 							
 							if ( ( true || plant.energy > reproductionLimit) && Rand(0, 16) < plant.fertility && plant.age > 1){
 								for (let k = 0; k < plant.children && plant.energy > 0; k++) {
-									reproduction( Math.floor(i / n), i % m, plant)
+									await reproduction( Math.floor(i / n), i % m, plant)
 									plant.energy -= (reproductionEnergy + plant.locationSearch * locationSearchEnergy)   
 								}
 							}
@@ -216,16 +238,19 @@
 			let d = max - min;
 			return Number((max - d*Math.random()).toFixed(2));
  		}
+		 
+		const RandInt = (min, max) => Rand(min, max).toFixed(0) - 0
 
  		//create();
 			
-	const iterations = (count) => {
+	const iterations = async (count) => {
 		for (let i = 0; i < count; i++){
-			nextStep(false)
+			await nextStep(false)
 		}
 		draw(arr)
 		drawChart()
 	}
 		 
+		begin();
 	</script>
 </body>
