@@ -28,6 +28,10 @@
 			</canvas>
 		</div>
 		<div>
+			<div>
+				<div>Размер<input type="number" id="size" value="100" min="10" max="600" /></div>
+				<div><input type="submit" value="Создать" onclick="begin();" /></div>
+			</div>
 			<div><input type="submit" value="Ход" onclick="nextStep(); drawChart();" /></div>
 			<div><input type="submit" value="Поехали" onclick="run();" /></div>
 			<div><input type="submit" value="Стопэ" onclick="stop();" /></div>
@@ -67,6 +71,21 @@
 	
 	<script>
 		
+		const begin = () => {
+			let size = document.getElementById('size').value;
+			if (Number(size) == NaN){
+				size = 100
+			}
+			else {
+				size = Number(size)
+				if (size < 10) size = 10;
+				if (size > 600) size = 600;
+			}
+			n = size;
+			m = n;
+			create();
+		}
+
 		const checkLinePointer = (event) => {
 			let x = Math.floor(event.layerX / cell)
 			let y = Math.floor(event.layerY / cell)
@@ -75,8 +94,8 @@
 
 		const size = 600;
 
-		const n = 100;
-		const m = n;
+		let n = 100;
+		let m = n;
 
 		const cell = size / n; 
 
@@ -196,7 +215,7 @@
 			return Number((max - d*Math.random()).toFixed(2));
  		}
 
- 		create();
+ 		//create();
 			
 	const iterations = (count) => {
 		for (let i = 0; i < count; i++){
