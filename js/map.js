@@ -51,10 +51,12 @@
 				}
 			}
 			arr[n * i + j].water = Math.min(255, 4*cnt)
+			arr[n * i + j].waterMin = arr[n * i + j].water
 		}
 
 		function create()
 		{
+			arr = []
 			for (let i = 0; i < n; i++){
 				for (let j = 0; j < m; j++){
 					arr[n * i + j] = {type : 0, r : 0, g: 0, b : 0, water : 0, soilFertility : 20}
@@ -68,10 +70,12 @@
                 createRiver(i, j)
             }
 
-			for (let i = 0; i < n; i++){
-				for (let j = 0; j < m; j++){
-					if (arr[n * i + j].type == 0) {
-						fillRiver(i, j, 3, 16)
+			for (let k = 1; k <= 2; k++){
+				for (let i = 0; i < n; i++){
+					for (let j = 0; j < m / k; j++){
+						if (arr[n * i + j].type == 0) {
+							fillRiver(i, j, 3, 16)
+						}
 					}
 				}
 			}
@@ -151,7 +155,6 @@
 		{
 			let canvas = document.getElementById("draw"), 
             context = canvas.getContext("2d");
-			//context.beginPath(); 
 			let type = getType('radio');
             for (let i = 0; i < n; i++){
 				for (let j = 0; j < m; j++){
@@ -176,7 +179,6 @@
 					}
 				}
 			}
-			//context.stroke();
 		}
 
 		function draw(arr, drawing = true)
@@ -184,6 +186,7 @@
 			let canvas = document.getElementById("draw"), 
             context = canvas.getContext("2d");
 			let type = getType('radio');
+
 			let cnt = 0;
 			let green = 0;
 			let red = 0
@@ -200,6 +203,7 @@
 			let age = 0
             let parasitism = 0
 			years.fill(0)
+
             for (let i = 0; i < n; i++){
 				for (let j = 0; j < m; j++){
 					let cellArr = arr[n * i + j]
@@ -226,6 +230,7 @@
                         soilEfficiency += plant.soilEfficiency
 						age += plant.age
 						years[plant.age]++
+					
 						if (type == 3) col = `rgb(${2*plant.age}, 255, ${2*plant.age})`;
 						if (type == 4) col = `rgb(${plant.energy/2}, ${plant.energy/2}, 0)`;
 						if (type == 5) col = `rgb(${plant.parasitism * plant.attack}, 0, ${plant.protection})`;
