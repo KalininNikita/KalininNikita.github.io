@@ -48,11 +48,14 @@
             mutation(plant.children, 5, 1/100).then( x => plant.children = x)
             mutation(plant.fertility, 4, 1/100).then( x => plant.fertility = x)
             mutation(plant.locationSearch, 1, 1/200).then( x => plant.locationSearch = x)
-            mutation(plant.soilEfficiency, 8, 1/200).then( x => plant.soilEfficiency = x)
+            mutation(plant.soilEfficiency, 6, 1/200).then( x => plant.soilEfficiency = x)
             mutation(plant.energyMax, 14, 1/200).then( x => plant.energyMax = x)
-            mutation(plant.parasitism, 1, 1/500).then( x => plant.parasitism = x)
+            mutation(plant.parasitism, 1, 1/300).then( x => plant.parasitism = x)
             mutation(plant.protection, 8, 1/100).then( x => plant.protection = x)
             mutation(plant.attack, 8, 1/100).then( x => plant.attack = x)
+            mutation(plant.symbiosis, 1, 1/10).then( x => plant.symbiosis = x)
+            
+            if (plant.multicellular == 0) mutation(plant.multicellular, 1, 1/100).then( x => plant.multicellular = x) 
         }
 
         const allInterbreeding = async (newPlant, mom, dad) => {
@@ -61,7 +64,7 @@
             interbreeding(mom.distance, dad.distance, 5).then(x => newPlant.distance = x)
             interbreeding(mom.children, dad.children, 5).then(x => newPlant.children = x)
             interbreeding(mom.fertility, dad.fertility, 4).then(x => newPlant.fertility = x)
-            interbreeding(mom.soilEfficiency, dad.soilEfficiency, 8).then(x => newPlant.soilEfficiency = x)
+            interbreeding(mom.soilEfficiency, dad.soilEfficiency, 6).then(x => newPlant.soilEfficiency = x)
             interbreeding(mom.energyMax, dad.energyMax, 14).then(x => newPlant.energyMax = x)
             interbreeding(mom.protection, dad.protection, 8).then(x => newPlant.protection = x)
             interbreeding(mom.attack, dad.attack, 8).then(x => newPlant.attack = x)
@@ -79,19 +82,19 @@
             }
         }
 
-		const reproduction = async (i, j, plant, type = 0) => {
-			let distance = plant.distance
+		const reproduction = async (i, j, arrPlant, type = 0) => {
+            let plant = arrPlant[0]
+			let distance = plant.distance + 1
 			let dx = plant.locationSearch * 2 * distance + 1
-            let x = 0;
-            let y = 0;
+            
 			for (let x = (n + i - distance) % n; dx > 0; x = (x + 1) % n, dx-- )
 			{
 				let dy = plant.locationSearch * 2 * distance + 1
 				for (let y = (m + j - distance) % m; dy > 0; y = (y + 1) % m, dy-- )
 			    {
                     if (plant.locationSearch == 0){
-                        let randX = Rand(-distance, distance + 1).toFixed(0) - 0
-                        let randY = Rand(-distance, distance + 1).toFixed(0) - 0
+                        let randX = RandInt(-distance, distance + 1)
+                        let randY = RandInt(-distance, distance + 1)
                         x = ( n + i + randX ) % n
                         y = ( m + j + randY ) % m
                     }
@@ -99,39 +102,55 @@
 
                     if (arr[index].type == 0) {
                         if (!arr[index].plant){
-                            arr[index].plant = {...plant}
-                            
-                            await allMutations(arr[index].plant)
-                            
-                            arr[index].plant.energy = energyBegin 
-                            arr[index].plant.age = 0		
-                            arr[index].plant.active = false	
+                            if (plant.multicellular == 0) {
+                                arr[index].plant = {...plant}
+                                arr[index].plant.energy = energyBegin 
+                                arr[index].plant.age = 0
+                                arr[index].plant.uniqueColor = {r : RandInt(0, 256), g : RandInt(0, 256), b : RandInt(0, 256), }
+                            } else {
+                                arr[index].plant = arr[i * n + j].plant  
+                                arr[index].plant.cells++
+                            }
 
-                            await setColorPlant(arr[index]) 
+                            await allMutations(arr[index].plant)
+
+                            arr[index].active = false	
+                            setColorPlant(arr[index]) 
 
                             return 0
                         }
                         else {
+                            if (arr[index].plant == plant && plant.multicellular == 0) return 5
+
                             if (arr[index].plant &&  plant.parasitism == 1){
                                 if (arr[index].plant.protection >= plant.attack && plant.locationSearch == 0) return 4;
                                 
                                 if (arr[index].plant.protection < plant.attack){
-                                    let newPlant = {...plant}
+                                    let newPlant = arr[i * n + j].plant 
+                                    if (plant.multicellular == 0) newPlant = {...plant}
+
                                     await allMutations(newPlant).then( async  () => {
-                                        newPlant.energy = arr[index].plant.energy * (newPlant.attack - arr[index].plant.protection) / (1 + newPlant.attack);
+                                        let energy = arr[index].plant.energy / arr[index].plant.cells * (newPlant.attack - arr[index].plant.protection) / (1 + newPlant.attack)
                                         //newPlant.energy = arr[index].plant.energy * 0.1;
-                                        newPlant.age = 0
-                                        newPlant.active = false	
+                                        newPlant.energy = plant.multicellular == 1 ? newPlant.energy + energy : energy;
+                                        if (plant.multicellular == 0) newPlant.age = 0
                                         
+                                        arr[index].active = false	
+
+                                        arr[index].plant.energy /= arr[index].plant.cells
+                                        arr[index].plant.cells--
+
                                         arr[index].plant = newPlant
-                                        await setColorPlant(arr[index])
+                                        if (plant.multicellular == 1) newPlant.cells++
+                                       
+                                        setColorPlant(arr[index])
                                     })
                                     return 3
                                 }
                             }else{
-                            if (type == 0){
-                                let newPlant = {...plant}
-                                await allInterbreeding(newPlant, plant, arr[index].plant).then( async () => await reproduction(x, y, newPlant, 1)) 
+                            if (type == 0 && plant.multicellular == 0){
+                                let newPlant = {...plant} 
+                                await allInterbreeding(newPlant, plant, arr[index].plant).then( async () => await reproduction(x, y, [newPlant], 1)) 
                                 
                                 return 2
                                 }	

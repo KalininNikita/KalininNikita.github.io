@@ -50,7 +50,7 @@
 					}
 				}
 			}
-			arr[n * i + j].water = Math.min(255, 4*cnt)
+			arr[n * i + j].water = Math.min(255, 2*cnt)
 			arr[n * i + j].waterMin = arr[n * i + j].water
 		}
 
@@ -63,7 +63,7 @@
 				}
 			}
 
-            let randRiver = RandInt(-cntRiver/3, cntRiver/3)
+            let randRiver = Rand(-cntRiver/3, cntRiver/3)
             for (let cnt = 0; cnt < cntRiver + randRiver; cnt++){
                 let i = RandInt(0, n);
                 let j = RandInt(0, m);
@@ -90,23 +90,30 @@
 
 			for (let i = 0; i < n * m; i++){
 					if (arr[i].type == 0 && Rand(0, 400) < 1) {
-						let green = Rand(64, 193).toFixed(0) - 0
-						let red = Rand(0, 65).toFixed(0) - 0
-                        let energyMax = Rand(256, 513).toFixed(0) - 0 
+						let green = RandInt(64, 193)
+						let red = RandInt(0, 65)
+                        let energyMax = RandInt(256, 513) 
 						let energy = energyBegin 
 						let age = 0
 						let distance = 1
 						let children = 1
 						let fertility = 8
                         let locationSearch = 0
-						let active = true
-                        let soilEfficiency = Rand(8, 16).toFixed(0) - 0 
+                        let soilEfficiency = RandInt(8, 16) 
                         let parasitism = 0; 
-                        let protection = Rand(0, 33).toFixed(0) - 0
-                        let attack = Rand(0, 33).toFixed(0) - 0
+                        let protection = RandInt(0, 33)
+                        let attack = RandInt(0, 33)
+						let multicellular = 0; 
+						let symbiosis = 0; 
+						let uniqueColor = {r : RandInt(0, 256), g : RandInt(0, 256), b : RandInt(0, 256), }
+						let cells = 1
 						arr[i].g = green 
 						arr[i].r = red 
-						arr[i].plant = {green, red, age, energy, energyMax, distance, children, fertility, soilEfficiency, active, locationSearch, protection, parasitism, attack } 
+						arr[i].active = true
+						arr[i].plant = {green, red, age, energy, energyMax, distance, children, fertility, 
+							soilEfficiency, locationSearch, 
+							protection, parasitism, attack,
+							multicellular, symbiosis, uniqueColor, cells, } 
 					}
 			}
 
@@ -166,12 +173,16 @@
 
 					if (cellArr.plant) {
 						let plant = cellArr.plant
+						if (type == 0) col = `rgb(${plant.red}, ${plant.parasitism ^ 1 * plant.green}, ${plant.parasitism * plant.attack})`;
 						if (type == 3) col = `rgb(${2*plant.age}, 255, ${2*plant.age})`;
 						if (type == 4) col = `rgb(${plant.energy/2}, ${plant.energy/2}, 0)`;
 						if (type == 5) col = `rgb(${plant.parasitism * plant.attack}, 0, ${plant.protection})`;
 						if (type == 6) col = `rgb(${8*plant.soilEfficiency}, 0, 0)`;
+						if (type == 7) col = `rgb(${plant.uniqueColor.r}, ${plant.uniqueColor.g}, ${plant.uniqueColor.b})`;
+						if (type == 8) col = `rgb(${plant.multicellular * 255}, 255, 0)`;
+						if (type == 9) col = `rgb(${plant.symbiosis * 255}, 255, 0)`;
 					}else {
-                        if (type == 5 && cellArr.type == 1) col = `rgb(0,0,0)`;    
+                        if ((type == 7 || type == 5) && cellArr.type == 1) col = `rgb(0,0,0)`;    
                     }
 
 					if (drawing){
@@ -202,6 +213,8 @@
             let soilEfficiency = 0
 			let age = 0
             let parasitism = 0
+			let multicellularity = 0
+			let symbiosis = 0
 			years.fill(0)
 
             for (let i = 0; i < n; i++){
@@ -214,8 +227,11 @@
 
 					if (cellArr.plant) {
 						let plant = cellArr.plant
+						let cells = plant.cells
 						cnt++
                         parasitism += plant.parasitism
+						multicellularity += plant.multicellular
+						symbiosis += plant.symbiosis
 						green += plant.green
 						red += plant.red
                         attack += plant.parasitism * plant.attack
@@ -225,18 +241,22 @@
 						children += plant.children
 						fertility += plant.fertility
                         locationSearch += plant.locationSearch
-						energy +=  plant.energy 
+						energy +=  plant.energy / cells
                         energyMax += plant.energyMax
                         soilEfficiency += plant.soilEfficiency
 						age += plant.age
 						years[plant.age]++
 					
+						if (type == 0) col = `rgb(${plant.red}, ${plant.parasitism ^ 1 * plant.green}, ${plant.parasitism * plant.attack})`;
 						if (type == 3) col = `rgb(${2*plant.age}, 255, ${2*plant.age})`;
 						if (type == 4) col = `rgb(${plant.energy/2}, ${plant.energy/2}, 0)`;
 						if (type == 5) col = `rgb(${plant.parasitism * plant.attack}, 0, ${plant.protection})`;
 						if (type == 6) col = `rgb(${8*plant.soilEfficiency}, 0, 0)`;
+						if (type == 7) col = `rgb(${plant.uniqueColor.r}, ${plant.uniqueColor.g}, ${plant.uniqueColor.b})`;
+						if (type == 8) col = `rgb(${plant.multicellular * 255}, 255, 0)`;
+						if (type == 9) col = `rgb(${plant.symbiosis * 255}, 255, 0)`;
 					}else {
-                        if (type == 5 && cellArr.type == 1) col = `rgb(0,0,0)`;    
+                        if ((type == 7 || type == 5) && cellArr.type == 1) col = `rgb(0,0,0)`;    
                     }
 
 					if (drawing){
@@ -248,7 +268,8 @@
 			cntPlants[year] = cnt
             locationSearchPlants[year] = locationSearch
             parasites[year] = parasitism
-
+			symbionts[year] = symbiosis
+			multicellular[year] = multicellularity
 			greenPlants[year] = green / cnt
 			redPlants[year] = red / cnt
             attackPlants[year] = attack / parasitism

@@ -29,7 +29,7 @@
 		</div>
 		<div>
 			<div>
-				<div>Размер<input type="number" id="n" value="100" min="50" max="600" /></div>
+				<div>Размер <input type="number" id="n" value="100" min="50" max="600" /></div>
 				<div><input type="submit" value="Создать" onclick="begin();" /></div>
 			</div>
 			<div><input type="submit" value="Ход" onclick="nextStep(); drawChart();" /></div>
@@ -64,9 +64,29 @@
 				<input type="radio" id="type6" name="radio"  onchange="drawing()" />
 				<label for="type6">Извлечение минералов</label>
 				</div>
+				<div>
+				<input type="radio" id="type7" name="radio"  onchange="drawing()" />
+				<label for="type7">Уникальные цвета</label>
+				</div>
+				<div>
+				<input type="radio" id="type8" name="radio"  onchange="drawing()" />
+				<label for="type8">Многоклеточные</label>
+				</div>
+				<div>
+				<input type="radio" id="type9" name="radio"  onchange="drawing()" />
+				<label for="type9">Симбионты</label>
+				</div>
 			</div>
 			<div id = "data">
 				Значения
+			</div>
+			<div>
+				<div>
+					<input type="submit" onclick="download()" value="Скачать"/>
+				</div>
+				<div>
+					<input type="file" value="Загрузить" onchange="upload(this)">
+				</div>
 			</div>
 		</div>
 		<div>
@@ -109,6 +129,7 @@
 		const checkLinePointer = (event) => {
 			let x = Math.floor(event.layerX / cell)
 			let y = Math.floor(event.layerY / cell)
+			console.log(n * x + y)
 			console.log(arr[n * x + y])
 		}
 
@@ -141,6 +162,8 @@
 
 		let cntPlants = []
 		let parasites = []
+		let multicellular = []
+		let symbionts = []
 		let greenPlants = []
 		let redPlants = []
 		let attackPlants = []
@@ -188,59 +211,88 @@
 			return energy
 		}
 
+		const energyExchange = (i, j, plant) => {
+			let distance = 1
+			let dx =  2 * distance + 1
+            let x = 0;
+            let y = 0;            
+			for (let x = (n + i - distance) % n; dx > 0; x = (x + 1) % n, dx-- )
+			{
+				let dy = 2 * distance + 1
+				for (let y = (m + j - distance) % m; dy > 0; y = (y + 1) % m, dy-- )
+			    {
+                    let index = n * x + y
+                    if (arr[index].plant && arr[index].plant.symbiosis == 1 
+						&& arr[index].plant.parasitism == plant.parasitism) {
+						let exchange = -plant.energy + 1
+						if (exchange < arr[index].plant.energy){
+							plant.energy += exchange
+							arr[index].plant.energy -= exchange
+							return 0;
+						}
+				    }
+                }
+			}
+			return 1
+		}
+
 		const nextStep = async (drawing = true) => {
 			for (let j = 0; j < n * m; j++){
 				let i = (j + year * n) % (n * m)
 				if (arr[i].plant) {
 					let plant = arr[i].plant
-					if (plant.active) {				
-							plant.age++;
-							let age = plant.age;
-							let dWater =  255 - plant.red - arr[i].water 
-							dWater = dWater > 0 ? dWater : 0
-							let soilEnergy = getSoilEnergy(arr[i], plant)
-							
-							plant.energy += (
-								sunPhase * Math.pow(plant.green, (plant.parasitism ^ 1) * 4/2) / Math.pow(maxGreen, 1)
-								+ soilEnergy
-								- Math.pow(plant.red, 1) / 4
-								- Math.pow(age, 4/5) 
-								- Math.pow(plant.distance, 3) 
-								- Math.pow(dWater, 6/2)
-								- Math.pow(plant.energyMax, 6/14) 
-								- Math.pow(plant.fertility, 1/2)
-								- Math.pow(plant.soilEfficiency, 2) / 3
-								- Math.pow(plant.protection, 3/4)
-								- Math.pow(plant.parasitism * plant.attack, 1/4)
-								- energyCost)
+					if (arr[i].active) {	
+						let age = plant.age;
+						let dWater =  255 - plant.red - arr[i].water 
+						dWater = dWater > 0 ? dWater : 0
+						let soilEnergy = getSoilEnergy(arr[i], plant)
+						
+						plant.energy += (
+							sunPhase * Math.pow(plant.green, (plant.parasitism ^ 1) * 4/2) / Math.pow(maxGreen, 1)
+							+ soilEnergy
+							+ 100 * plant.multicellular * Math.pow(plant.cells, 6/5) 
+							- Math.pow(plant.red, 1) / 4
+							- Math.pow(age, 4/5) 
+							- Math.pow(plant.distance, 3) 
+							- Math.pow(dWater, 6/2)
+							- Math.pow(plant.energyMax, 6/14) 
+							- Math.pow(plant.fertility, 1/2)
+							- Math.pow(plant.soilEfficiency, 2) / 3
+							- Math.pow(plant.protection, 2/4)
+							- Math.pow(plant.parasitism * plant.attack, 1/4)
+							- energyCost)
 
-							if (plant.energy > plant.energyMax) plant.energy = plant.energyMax
-/*
+						if (plant.energy > plant.cells * plant.energyMax) plant.energy = plant.cells * plant.energyMax
+
+							/*
 							if (plant.red < 255 - arr[i].water) {
 								plant.energy = -1
 							}*/
 							
-							if ( ( true || plant.energy > reproductionLimit) && Rand(0, 16) < plant.fertility && plant.age > 0){
-								for (let k = 0; k < plant.children && plant.energy > 0; k++) {
-									await reproduction( Math.floor(i / n), i % m, plant)
-									plant.energy -= (reproductionEnergy + plant.locationSearch * locationSearchEnergy)   
-								}
+						if ( ( true || plant.energy > reproductionLimit) && Rand(0, 16) < plant.fertility + 1 && plant.age > 0){
+							for (let k = 0; k - 1 < plant.children && plant.energy > 0; k++) {
+								let res = await reproduction( Math.floor(i / n), i % m, [arr[i].plant])
+								if (res != 5) plant.energy -= (reproductionEnergy + plant.locationSearch * locationSearchEnergy)   
 							}
-
 						}
+
+					}
 				}
 			}
 
 			for (let i = 0; i < n * m; i++){
-				if (arr[i].plant) {
-					if (arr[i].plant.energy < 0){
+				if (arr[i].plant) {	
+					arr[i].plant.age += 1 / arr[i].plant.cells
+					if (arr[i].plant.symbiosis == 1 && arr[i].plant.energy < 0) {
+						energyExchange(Math.floor(i / n), i % m, arr[i].plant)
+					}
+					if (arr[i].plant.energy < 0) {
 						delete arr[i].plant
 						arr[i] = {type : 0, r : 0, g: 0, b : 0, water : arr[i].water, 
 						soilFertility : Math.min(arr[i].soilFertility + 20	, 255) }
-					} else {
-						arr[i].plant.active = true
-					}
+					} 
 				}	
+				arr[i].active = true
 
 				arr[i].soilFertility = Math.min(arr[i].soilFertility + fertilizer, 255)  
 
@@ -249,9 +301,8 @@
 				if (arr[i].water < arr[i].waterMin) arr[i].water = arr[i].waterMin
 			}
 
-
-			sunPhase = 0.45 * Math.sin(solarCycle * year *  Math.PI / 180 ) + 0.55;
-			rainPhase = 10 * Math.sin(rainCycle * year *  Math.PI / 180 );
+			sunPhase = 0.45 * Math.sin(year *  Math.PI / solarCycle ) + 0.55;
+			rainPhase = 10 * Math.sin(year *  Math.PI / rainCycle );
 
 			return draw(arr, drawing)
 		}
@@ -259,10 +310,10 @@
 		function Rand(min, max)
 		{
 			let d = max - min;
-			return Number((max - d*Math.random()).toFixed(2));
- 		}
-		 
-		const RandInt = (min, max) => Rand(min, max).toFixed(0) - 0
+			return max - d*Math.random();
+		}
+
+		const RandInt = (min, max) => Rand(min, max) >> 0
 
  		//create();
 			
@@ -273,7 +324,36 @@
 		draw(arr)
 		drawChart()
 	}
+
+	const download = () => {
+		let data = {n, m, cell, sunPhase, rainPhase, arr, year, arr}
+		
+		const element = document.createElement('a');
+	
+		element.setAttribute('href', 'data:text/plain;charset=utf-8,' + JSON.stringify(data));
+		element.setAttribute('download', 'evolution.json');
+		
+		element.style.display = 'none';
+		document.body.appendChild(element);
+		element.click();
+		document.body.removeChild(element);
+	} 
 		 
+		 const upload = (input) => {
+			let file = input.files[0];
+			let reader = new FileReader();
+
+			reader.readAsText(file);
+
+			reader.onload = function() {
+				({n, m, cell, sunPhase, rainPhase, arr, year, arr} = JSON.parse(reader.result));
+				drawing()
+			};
+			reader.onerror = function() {
+				console.log(reader.error);
+			};
+		 }
+
 		begin();
 	</script>
 </body>

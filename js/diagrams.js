@@ -28,8 +28,10 @@
 
 			datasets = [{data: cntPlants, label: 'Всего', borderColor : '#000000' }, 
             {data: locationSearchPlants, label: 'С поиском места', borderColor : '#0000ff' }, 
-            {data: parasites, label: 'Паразиты', borderColor : '#ff00ff' }, ]
-
+            {data: parasites, label: 'Паразиты', borderColor : '#ff00ff' },
+            {data: multicellular, label: 'Многоклеточные', borderColor : '#00ff00' }, 
+            {data: symbionts, label: 'Симбионты', borderColor : '#ffff00' }, ]
+            
 			if (datasets[0]) { fillChart('cntChart', labels, datasets, 'cntChart') }
 
 			datasets = [{data: greenPlants, label: 'Средний цвет', borderColor : '#00aa00' }, 
