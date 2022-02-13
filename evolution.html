@@ -29,7 +29,7 @@
 		</div>
 		<div>
 			<div>
-				<div>Размер <input type="number" id="n" value="100" min="50" max="600" /></div>
+				<div>Размер <input type="number" id="n" value="200" min="70" max="600" /></div>
 				<div><input type="submit" value="Создать" onclick="begin();" /></div>
 			</div>
 			<div><input type="submit" value="Ход" onclick="nextStep(); drawChart();" /></div>
@@ -76,6 +76,14 @@
 				<input type="radio" id="type9" name="radio"  onchange="drawing()" />
 				<label for="type9">Симбионты</label>
 				</div>
+				<div>
+				<input type="radio" id="type10" name="radio"  onchange="drawing()" />
+				<label for="type10">Высоты</label>
+				</div>
+				<div>
+				<input type="radio" id="type11" name="radio"  onchange="drawing()" />
+				<label for="type11">Кража/защита энергии</label>
+				</div>
 			</div>
 			<div id = "data">
 				Значения
@@ -85,7 +93,7 @@
 					<input type="submit" onclick="download()" value="Скачать"/>
 				</div>
 				<div>
-					<input type="file" value="Загрузить" onchange="upload(this)">
+					<input type="file" value="Загрузить" accept=".json" onchange="upload(this)">
 				</div>
 			</div>
 		</div>
@@ -110,7 +118,7 @@
 			}
 			else {
 				nValue = Number(nValue)
-				if (nValue < 50) nValue = 50;
+				if (nValue < 70) nValue = 70;
 				if (nValue > 600) nValue = 600;
 			}
 			n = nValue;
@@ -236,6 +244,27 @@
 			return 1
 		}
 
+		const takesEnergy = (i, j, plant) => {
+			let distance = 1
+			let dx =  2 * distance + 1
+            let x = 0;
+            let y = 0;            
+			for (let x = (n + i - distance) % n; dx > 0; x = (x + 1) % n, dx-- )
+			{
+				let dy = 2 * distance + 1
+				for (let y = (m + j - distance) % m; dy > 0; y = (y + 1) % m, dy-- )
+			    {
+                    let index = n * x + y
+                    if (arr[index].plant) {
+						let d = Math.max(plant.takesEnergy - arr[index].protectsEnergy, 0)
+						plant.energy += d
+						arr[index].plant.energy -= d
+				    }
+                }
+			}
+			return 0
+		}
+
 		const nextStep = async (drawing = true) => {
 			for (let j = 0; j < n * m; j++){
 				let i = (j + year * n) % (n * m)
@@ -260,14 +289,10 @@
 							- Math.pow(plant.soilEfficiency, 2) / 3
 							- Math.pow(plant.protection, 2/4)
 							- Math.pow(plant.parasitism * plant.attack, 1/4)
+							- Math.pow(plant.protectsEnergy, 2) / 32
 							- energyCost)
 
 						if (plant.energy > plant.cells * plant.energyMax) plant.energy = plant.cells * plant.energyMax
-
-							/*
-							if (plant.red < 255 - arr[i].water) {
-								plant.energy = -1
-							}*/
 							
 						if ( ( true || plant.energy > reproductionLimit) && Rand(0, 16) < plant.fertility + 1 && plant.age > 0){
 							for (let k = 0; k - 1 < plant.children && plant.energy > 0; k++) {
@@ -286,15 +311,20 @@
 					if (arr[i].plant.symbiosis == 1 && arr[i].plant.energy < 0) {
 						energyExchange(Math.floor(i / n), i % m, arr[i].plant)
 					}
+					if (arr[i].plant.parasitism == 1) {
+						//takesEnergy(Math.floor(i / n), i % m, arr[i].plant)
+					}
 					if (arr[i].plant.energy < 0) {
 						delete arr[i].plant
-						arr[i] = {type : 0, r : 0, g: 0, b : 0, water : arr[i].water, 
-						soilFertility : Math.min(arr[i].soilFertility + 20	, 255) }
+						arr[i].r = 0;
+						arr[i].b = 0;
+						arr[i].g = 0;
+						arr[i].soilFertility = Math.min(arr[i].soilFertility + 20, arr[i].soilFertilityMax);
 					} 
 				}	
 				arr[i].active = true
 
-				arr[i].soilFertility = Math.min(arr[i].soilFertility + fertilizer, 255)  
+				arr[i].soilFertility = Math.min(arr[i].soilFertility + fertilizer, arr[i].soilFertilityMax)  
 
 				arr[i].water += rainPhase
 				if (arr[i].water > 255) arr[i].water = 255
@@ -355,5 +385,7 @@
 		 }
 
 		begin();
+
+
 	</script>
 </body>

@@ -52,9 +52,11 @@
             mutation(plant.energyMax, 14, 1/200).then( x => plant.energyMax = x)
             mutation(plant.parasitism, 1, 1/300).then( x => plant.parasitism = x)
             mutation(plant.protection, 8, 1/100).then( x => plant.protection = x)
+            mutation(plant.takesEnergy, 6, 1/100).then( x => plant.takesEnergy = x)
+            mutation(plant.protectsEnergy, 6, 1/100).then( x => plant.protectsEnergy = x)
             mutation(plant.attack, 8, 1/100).then( x => plant.attack = x)
             mutation(plant.symbiosis, 1, 1/10).then( x => plant.symbiosis = x)
-            
+
             if (plant.multicellular == 0) mutation(plant.multicellular, 1, 1/100).then( x => plant.multicellular = x) 
         }
 
@@ -68,6 +70,8 @@
             interbreeding(mom.energyMax, dad.energyMax, 14).then(x => newPlant.energyMax = x)
             interbreeding(mom.protection, dad.protection, 8).then(x => newPlant.protection = x)
             interbreeding(mom.attack, dad.attack, 8).then(x => newPlant.attack = x)
+            interbreeding(mom.takesEnergy, dad.takesEnergy, 6).then(x => newPlant.takesEnergy = x)
+            interbreeding(mom.protectsEnergy, dad.protectsEnergy, 6).then(x => newPlant.protectsEnergy = x)
         }
 
         const setColorPlant = async (cell) => { 
