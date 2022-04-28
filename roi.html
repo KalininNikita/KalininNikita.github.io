@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<head>
+	<title>Рой</title>
+    <meta name="description" content="Сайт, рисующий рой">
+    <meta name="author" content="Vasa">	
+    <link rel="icon" type="image/png" href="mod.png"/>
+</head>
+ 
+<body>
+	<style>
+		.main{
+			display: grid;
+			grid-template-columns: 2fr 1fr 2fr;
+		}
+		div{
+			padding: 2px;
+		}
+	</style>
+
+	<div class="main" >
+		<div class="picture"  onclick = "checkLinePointer(event);">
+			<canvas id="draw" width="600" height="600">
+				Этот элемент не поддерживается
+			</canvas>
+		</div>
+		<div>
+			<div>
+				<div>Размер <input type="number" id="n" value="200" min="70" max="600" /></div>
+				<div><input type="submit" value="Создать" onclick="begin();" /></div>
+			</div>
+			<div><input type="submit" value="Ход" onclick="nextStep();" /></div>
+			<div><input type="submit" value="Поехали" onclick="run();" /></div>
+			<div><input type="submit" value="Стопэ" onclick="stop();" /></div>
+
+			<div>Двигаться, если в клетке меньше <input type="number" min="0" max="8" id="maxPlant" value="6" onchange="changeMax()" /> соседей </div>
+			<div> и больше <input type="number" min="0" max="8" id="minPlant" value="2" onchange="changeMin()" /></div>
+		</div>
+	</div>
+	
+	<script>
+		
+        function create()
+		{
+			arr = []
+			
+			for (let i = 0; i < n * m; i++){
+                arr[i] = {}
+                arr[i].r = 0 
+				arr[i].g = 0 
+				arr[i].b = 0
+
+				if (Rand(0, 50) < 1) {
+				    arr[i].b = 255
+					arr[i].plant = {} 
+				}
+			}
+
+			draw(arr);
+		}
+
+		const begin = () => {
+			let nValue = document.getElementById('n').value;
+			if (Number(nValue) == NaN){
+				nValue = 100
+			}
+			else {
+				nValue = Number(nValue)
+				if (nValue < 70) nValue = 70;
+				if (nValue > 600) nValue = 600;
+			}
+			n = nValue;
+			m = n;
+			cell = Math.floor( size / n ); 
+			cntRiver = n / 15;
+
+			var canvas = document.getElementById("draw");  
+			canvas.width = n * cell;
+			canvas.height = m * cell;
+
+			create();
+		}
+
+        const changeMax = () => {
+            let nValue = document.getElementById('maxPlant').value;
+			if (Number(nValue) == NaN){
+				nValue = 6
+			}
+			else {
+				nValue = Number(nValue)
+				if (nValue < 0) nValue = 0;
+				if (nValue > 9) nValue = 8;
+			}
+            maxPlant = nValue
+        }
+
+        const changeMin = () => {
+            let nValue = document.getElementById('minPlant').value;
+            if (Number(nValue) == NaN){
+                nValue = 6
+            }
+            else {
+                nValue = Number(nValue)
+                if (nValue < 0) nValue = 0;
+                if (nValue > 9) nValue = 8;
+            }
+            minPlant = nValue
+        }
+
+		const checkLinePointer = (event) => {
+			let x = Math.floor(event.layerX / cell)
+			let y = Math.floor(event.layerY / cell)
+			console.log(n * x + y)
+			console.log(arr[n * x + y])
+		}
+
+		const size = 600;
+
+		let n = 100;
+		let m = n;
+
+        let maxPlant = 6;
+        let minPlant = 2;
+
+		let cell = size / n; 
+
+		let arr = [];
+		
+		let years = []
+		let year = 0;
+		
+		let newInterval = null;
+
+		const run = () => newInterval = newInterval == null ? setInterval(nextStep, 500) : newInterval
+		const stop = () => {clearInterval(newInterval); newInterval = null}
+
+        const checkAround = (index) => {
+            let cnt = 0;
+            if ( arr[( n * m + index + 1) % (n * m)].plant ) cnt++;
+            if ( arr[( n * m + index - 1) % (n * m)].plant ) cnt++;
+
+            if ( arr[( n * m + index + n) % (n * m)].plant ) cnt++;
+            if ( arr[( n * m + index - n) % (n * m)].plant ) cnt++;
+            
+            if ( arr[( n * m + index + n + 1) % (n * m)].plant ) cnt++;
+            if ( arr[( n * m + index - n + 1) % (n * m)].plant ) cnt++;
+
+            if ( arr[( n * m + index + n - 1) % (n * m)].plant ) cnt++;
+            if ( arr[( n * m + index - n - 1) % (n * m)].plant ) cnt++;
+            
+            return cnt;
+        } 
+
+        const checkCells = (i, j) => {
+            let distance = 0 + 1
+			let dx = 1 * 2 * distance + 1
+            
+            let index = -1;
+            let opt = -1;
+			for (let x = (n + i - distance) % n; dx > 0; x = (x + 1) % n, dx-- )
+			{
+				let dy = 1 * 2 * distance + 1
+				for (let y = (m + j - distance) % m; dy > 0; y = (y + 1) % m, dy-- )
+			    {
+                    let ind = n * x + y
+                    if (!arr[ind].plant) {
+                        let cnt = checkAround(ind)
+                        if (cnt > opt && cnt < maxPlant && cnt > minPlant){
+                            index = ind;
+                            opt = cnt
+                        }
+                    }
+                }
+			}
+
+            return index
+        }
+
+		const nextStep = async (drawing = true) => {
+			for (let j = 0; j < n * m; j++){
+				let i = (j) % (n * m)
+				if (arr[i].plant) {
+					let plant = arr[i].plant
+                    let index = checkCells( (i / n) >> 0, j % m);
+                    if (index != -1) {debugger
+                        arr[index].plant = plant;
+                        arr[index].b = 255;
+                        arr[i].plant = null;
+                        arr[i].b = 0;
+                        }
+					}
+				}
+
+			return draw(arr, drawing)
+		}
+
+		function Rand(min, max)
+		{
+			let d = max - min;
+			return max - d*Math.random();
+		}
+
+		const RandInt = (min, max) => Rand(min, max) >> 0
+
+ 		//create();
+			
+	const iterations = async (count) => {
+		for (let i = 0; i < count; i++){
+			await nextStep(false)
+		}
+		draw(arr)
+	}
+
+    async function rect(context, x1, y1, x2, y2, color)
+		{
+			context.fillStyle  = color;
+			context.fillRect(x1, y1, x2, y2);
+		}
+
+	function draw(arr, drawing = true)
+		{
+			let canvas = document.getElementById("draw"), 
+            context = canvas.getContext("2d", { alpha: false });
+			
+            for (let i = 0; i < n; i++){
+				for (let j = 0; j < m; j++){
+					let cellArr = arr[n * i + j]
+					let col = `rgb(${cellArr.r}, ${cellArr.g}, ${cellArr.b})`;
+
+					if (drawing){
+						rect(context, i*cell, j*cell,(i+1)*cell, (j+1)*cell, col)
+					}
+				}
+			}
+            
+            year++
+
+		}
+
+	const download = () => {
+		let data = {n, m, cell, sunPhase, rainPhase, arr, year, arr}
+		
+		const element = document.createElement('a');
+	
+		element.setAttribute('href', 'data:text/plain;charset=utf-8,' + JSON.stringify(data));
+		element.setAttribute('download', 'evolution.json');
+		
+		element.style.display = 'none';
+		document.body.appendChild(element);
+		element.click();
+		document.body.removeChild(element);
+	} 
+		 
+		 const upload = (input) => {
+			let file = input.files[0];
+			let reader = new FileReader();
+
+			reader.readAsText(file);
+
+			reader.onload = function() {
+				({n, m, cell, sunPhase, rainPhase, arr, year, arr} = JSON.parse(reader.result));
+				drawing()
+			};
+			reader.onerror = function() {
+				console.log(reader.error);
+			};
+		 }
+
+		begin();
+
+
+	</script>
+</body>
